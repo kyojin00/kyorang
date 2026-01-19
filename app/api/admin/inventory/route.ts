@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 
 type Body = {
   productId?: string;
   delta?: number; // + 재입고, - 차감
-  // adminToken?: string; // ❌ 토큰 제거
 };
 
 export async function POST(req: Request) {
   try {
     // ✅ NextAuth 세션 기반 관리자 체크
-    const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as { role?: string } | null)?.role;
+
+    if (!session?.user || role !== "ADMIN") {
       return NextResponse.json({ message: "관리자 권한이 필요해요." }, { status: 401 });
     }
 
